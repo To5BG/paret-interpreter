@@ -22,6 +22,12 @@ class ParserTest extends AnyFunSuite {
     }
   }
 
+  test("Lambda #3") {
+    assertResult(FdExt(List(), TrueExt())) {
+      Parser.parse("(lambda () true)")
+    }
+  }
+
   test("Larger lambda") {
     assertResult(
       AppExt(
@@ -134,6 +140,17 @@ class ParserTest extends AnyFunSuite {
   test("Branch-less if") {
     intercept[ParseError] {
       Parser.parse("(if true)")
+    }
+  }
+
+  test("Object") {
+    assertResult(ObjectExt(List(FieldExt("x", NumExt(0)), FieldExt("y", NumExt(0))),
+      List(MethodExt("get-x", List(), IdExt("x")),
+        MethodExt("get-y", List(), IdExt("y")),
+        MethodExt("set-x", List("nx"), SetExt("x", IdExt("nx"))),
+        MethodExt("set-y", List("ny"), SetExt("y", IdExt("ny")))))) {
+      Parser.parse("(object ((field x 0) (field y 0)) " +
+        "((method get-x () x) (method get-y () y) (method set-x (nx) (set x nx)) (method set-y (ny) (set y ny))))")
     }
   }
 
