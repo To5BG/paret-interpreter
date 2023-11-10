@@ -12,13 +12,13 @@ object TypeChecker {
   def typeOf(e: ExprExt): Type = typeOf(e, Nil)
 
   def typeOf(e: ExprExt, nv: TEnvironment): Type = e match
-    case TrueExt() => BoolT()
-    case FalseExt() => BoolT()
+    case TrueExt() | FalseExt() => BoolT()
     case NilExt(t) => ListT(t)
     case IdExt(a) => nv.find(_.name == a) match
       case Some(t) => t.ty
       case _ => throw TypeError("Element with this id does not exist")
     case NumExt(_) => NumT()
+    case StringExt(_) => StringT() 
     case ListExt(t, l) if !l.exists(typeOf(_, nv) != t) => ListT(t)
     case TupleExt(l) => TupleT(l.map(typeOf(_, nv)))
     case ProjExt(n, e) => typeOf(e, nv) match
@@ -38,6 +38,7 @@ object TypeChecker {
     case SetExt(i, e) => nv.find(_.name == i) match
       case Some(t) if t.ty == typeOf(e, nv) => t.ty
       case _ => throw TypeError("Element with this id does not exist")
+    // TODO: Do type checking on objects
     case BinOpExt(op, a, b) => (op, typeOf(a, nv), typeOf(b, nv)) match
       case ("+" | "*" | "-", NumT(), NumT()) => NumT()
       case ("num=" | "num<" | "num>", NumT(), NumT()) => BoolT()
@@ -45,6 +46,8 @@ object TypeChecker {
       case ("cons", t, ListT(lt)) if t.equals(lt) => ListT(t)
       case ("setbox", RefT(t), rt) if t == rt => rt
       case ("seq", _, rt) => rt
+      case ("str=", StringT(), StringT()) => BoolT()
+      case ("str++", StringT(), StringT()) => StringT()
       case _ => throw TypeError("Invalid binary op type")
     case UnOpExt(op, a) => (op, typeOf(a, nv)) match
       case ("-", NumT()) => NumT()
