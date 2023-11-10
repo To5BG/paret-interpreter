@@ -29,6 +29,15 @@ object Desugarer {
     case CondEExt(l, e) => l.foldRight(desugar(e))((t, acc) => IfC(desugar(t._1), desugar(t._2), acc))
     case IfExt(a, b, c) => IfC(desugar(a), desugar(b), desugar(c))
     case SetExt(i, e) => SetC(i, desugar(e))
+    case DoSeqExt(l) => l.foldRight(desugar(l.last))((s, acc) => SeqC(desugar(s), acc))
+    case ObjectExt(args, funcs) => AppC(FdC(args.map(_.name),
+      foldArgsMethods(args.map(f => (f.name, desugar(f.value))), funcs, UndefinedC())), args.map(_ => UninitializedC()))
+    case ObjectDelExt(del, args, f) =>
+      val nargs = ("super", desugar(del)) :: args.map(f => (f.name, desugar(f.value)))
+      AppC(FdC(nargs.map(_._1), foldArgsMethods(nargs, f, AppC(IdC("super"), List(IdC("self"), IdC("msg"))))),
+        nargs.map(_ => UninitializedC()))
+    case MsgExt(r, m, args) => AppC(FdC(List("msgobj!"), AppC(AppC(IdC("msgobj!"),
+      List(IdC("msgobj!"), StringC(m))), args.map(desugar))), List(desugar(r)))
     case BinOpExt(op, a, b) => op match
       case "+" => PlusC(desugar(a), desugar(b))
       case "*" => MultC(desugar(a), desugar(b))
@@ -55,16 +64,6 @@ object Desugarer {
       case "unbox" => UnboxC(desugar(a))
       case _ => throw DesugarError("Invalid unary operation")
     case AppExt(f, l) => AppC(desugar(f), l.map(desugar))
-    case ObjectExt(args, f) => AppC(FdC(args.map(_.name),
-      foldArgsMethods(args.map(f => (f.name, desugar(f.value))), f, UndefinedC())),
-      args.map(_ => UninitializedC()))
-    case ObjectDelExt(del, args, f) =>
-      val nargs = ("super", desugar(del)) :: args.map(f => (f.name, desugar(f.value)))
-      AppC(FdC(nargs.map(_._1), foldArgsMethods(nargs, f, AppC(IdC("super"), List(IdC("self"), IdC("msg"))))),
-        nargs.map(_ => UninitializedC()))
-    case MsgExt(r, m, args) => AppC(FdC(List("msgobj!"), AppC(AppC(IdC("msgobj!"),
-      List(IdC("msgobj!"), StringC(m))), args.map(desugar))), List(desugar(r)))
-    case DoSeqExt(l) => l.foldRight(desugar(l.last))((s, acc) => SeqC(desugar(s), acc))
     case null => throw DesugarError("Invalid desugaring")
 
   private val Z_combinator = FdC(List("f"), AppC(
@@ -83,8 +82,7 @@ object Desugarer {
   ))
 
   private def foldArgsMethods(args: List[(String, ExprC)], f: List[MethodExt], e: ExprC): ExprC =
-    args.foldRight(FdC(List("self", "msg"), f.foldRight(e)(
-      (m, acc) => IfC(EqStrC(IdC("msg"), StringC(m.name)), FdC(m.args, desugar(m.body)), acc))): ExprC)(
-      (a, l) => SeqC(SetC(a._1, a._2), l))
+    args.foldRight(FdC(List("self", "msg"), f.foldRight(e)((m, acc) => IfC(EqStrC(IdC("msg"), StringC(m.name)),
+      FdC(m.args, desugar(m.body)), acc))): ExprC)((a, l) => SeqC(SetC(a._1, a._2), l))
 
 }

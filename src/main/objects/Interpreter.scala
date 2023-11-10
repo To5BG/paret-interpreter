@@ -46,6 +46,7 @@ object Interpreter {
       if (!nv.exists(_.name == v)) throw InterpError("Could not find variable")
       val t = interp(b, nv, st1)
       (t._1, update(v, nv, t._2, t._1))
+    case SeqC(a, b) => interp(b, nv, interp(a, nv, st1)._2)
     case PlusC(l, r) =>
       val t = checkArithm(l, r, nv, st1)
       (NumV(t._1 + t._2), t._3)
@@ -67,7 +68,6 @@ object Interpreter {
     case SetboxC(a, b) => interp(a, nv, st1) match
       case (BoxV(l), st2: Store) => val t = interp(b, nv, st2); (t._1, update(l, t._2, t._1))
       case _ => throw InterpError("Cannot unbox a non-boxed value")
-    case SeqC(a, b) => interp(b, nv, interp(a, nv, st1)._2)
     case HeadC(e) => interp(e, nv, st1) match
       case (ConsV(e, _), s) => (e, s)
       case _ => throw InterpError("Cannot apply list operation to non-list expressions")
@@ -146,15 +146,9 @@ object Interpreter {
 
 object SafeInterpreter {
 
-  def interp(str: String): Value =
-    val expr = Parser.parse(Reader.read(str))
-    TypeChecker.typeOf(expr)
-    Interpreter.interp(Desugarer.desugar(expr))
+  def interp(str: String): Value = interp(Reader.read(str))
 
-  def interp(e: SExpr): Value =
-    val expr = Parser.parse(e)
-    TypeChecker.typeOf(expr)
-    Interpreter.interp(Desugarer.desugar(expr))
+  def interp(e: SExpr): Value = interp(Parser.parse(e))
 
   def interp(e: ExprExt): Value =
     TypeChecker.typeOf(e)
