@@ -4,112 +4,82 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class ParserTest extends AnyFunSuite {
 
-  test("Parse 5") {
+  test("Number") {
     assertResult(NumExt(5)) {
       Parser.parse("5")
     }
   }
 
-  test("Parse 6") {
+  test("Lambda") {
     assertResult(FdExt(List(Param("x", BoolT()), Param("y", BoolT())), TrueExt())) {
-      Parser.parse("(lambda (x y) true)")
+      Parser.parse("(lambda ((x : Bool) (y : Bool)) true)")
     }
   }
 
-  test("Parse 7") {
+  test("Lambda #2") {
+    assertResult(FdExt(List(Param("n", NumT())), TrueExt())) {
+      Parser.parse("(lambda ((n : Num)) true)")
+    }
+  }
+
+  test("Larger lambda") {
+    assertResult(
+      AppExt(
+        AppExt(
+          FdExt(List(Param("f", FunT(List(NumT()), NumT()))), FdExt(List(Param("x", NumT())),
+            AppExt(IdExt("f"), List(IdExt("x"))))), List(FdExt(List(Param("y", NumT())),
+            BinOpExt("*", IdExt("y"), IdExt("x"))))), List(NumExt(16)))) {
+      Parser.parse("(((lambda ((f : ((Num) -> Num))) (lambda ((x : Num)) (f x))) " +
+        "(lambda ((y : Num)) (* y x))) 16)")
+    }
+  }
+
+  test("Let") {
     assertResult(LetExt(List(LetBindExt("x", NumExt(5))), TrueExt())) {
       Parser.parse("(let ((x 5)) true)")
     }
   }
 
-  test("Parse 8") {
-    assertResult(
-      AppExt(
-        AppExt(
-          FdExt(List("f"), FdExt(List("x"), AppExt(IdExt("f"), List(IdExt("x"))))),
-          List(FdExt(List("y"), BinOpExt("*", IdExt("y"), IdExt("x"))))),
-        List(NumExt(16)))) {
-      Parser.parse("(((lambda (f) (lambda (x) (f x))) (lambda (y) (* y x))) 16)")
-    }
-  }
-
-  test("Parse 9 (Z-combinator)") {
-    assertResult(true) {
-      print(Parser.parse("(lambda (f) ((lambda (y) (y y)) (lambda (z) (f (lambda (x) ((z z) x))))))"))
-      true
-    }
-  }
-
-  test("test 01") {
+  test("Let #2") {
     assertResult(LetExt(List(LetBindExt("x", NumExt(5))), NumExt(5))) {
       Parser.parse("(let ((x 5)) 5)")
     }
   }
 
-  test("test 02") {
+  test("Let #3") {
     assertResult(LetExt(List(LetBindExt("x", NumExt(5)), LetBindExt("y", NumExt(4))), NumExt(6))) {
       Parser.parse("(let ((x 5) (y 4)) 6)")
     }
   }
 
-  test("test 03") {
+  test("Empty let") {
     intercept[ParseError] {
       Parser.parse("(let () 5)")
     }
   }
 
-  test("test 04") {
+  test("Recurring let") {
     intercept[ParseError] {
       Parser.parse("(let ((x 5) (x y)) 5)")
     }
   }
 
-  test("test 05") {
+  test("Bad let argument") {
     intercept[ParseError] {
       Parser.parse("(let ((and 5)) 5)")
     }
   }
 
-  test("test 06") {
-    assertResult(RecLamExt("sum", "n", IfExt(BinOpExt("num=", IdExt("n"), NumExt(0)),
+  test("Rec-Lam") {
+    assertResult(RecLamExt("sum", NumT(), BoolT(), "n", TrueExt())) {
+      Parser.parse("(rec-lam sum : ((Num) -> Bool) (n) true)")
+    }
+  }
+
+  test("Larger rec-lam") {
+    assertResult(RecLamExt("sum", NumT(), NumT(), "n", IfExt(BinOpExt("num=", IdExt("n"), NumExt(0)),
       NumExt(0), BinOpExt("+", IdExt("n"), AppExt(IdExt("sum"), List(BinOpExt("-", IdExt("n"), NumExt(1)))))))) {
-      Parser.parse("(rec-lam sum (n) (if (num= n 0) 0 (+ n (sum (- n 1)))))")
-    }
-  }
-
-  test("test 07") {
-    assertResult(RecLamExt("sum", "n", TrueExt())) {
-      Parser.parse("(rec-lam sum (n) true)")
-    }
-  }
-
-  test("test 08") {
-    assertResult(FdExt(List("n"), TrueExt())) {
-      Parser.parse("(lambda (n) true)")
-    }
-  }
-
-  test("test 09") {
-    assertResult(FdExt(List(), TrueExt())) {
-      Parser.parse("(lambda () true)")
-    }
-  }
-
-  test("test 010") {
-    assertResult(FdExt(List("n"), IdExt("y"))) {
-      Parser.parse("(lambda (n) y)")
-    }
-  }
-
-  test("test 011") {
-    assertResult(FdExt(List("m", "n"), BinOpExt("+", IdExt("m"), IdExt("n")))) {
-      Parser.parse("(lambda (m n) (+ m n))")
-    }
-  }
-
-  test("test 012") {
-    intercept[ParseError] {
-      Parser.parse("(let () true)")
+      Parser.parse("(rec-lam sum : ((Num) -> Num) (n) (if (num= n 0) 0 (+ n (sum (- n 1)))))")
     }
   }
 
