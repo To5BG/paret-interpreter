@@ -34,6 +34,18 @@ class ParserTest extends AnyFunSuite {
     }
   }
 
+  test("Binop") {
+    assertResult(BinOpExt("+", BinOpExt("*", NumExt(1), NumExt(2)), BinOpExt("and", NumExt(3), NumExt(4)))) {
+      Parser.parse("(+ (* 1 2) (and 3 4))")
+    }
+  }
+
+  test("Cond") {
+    assertResult(CondEExt(List((TrueExt(), FalseExt()), (TrueExt(), FalseExt())), FalseExt())) {
+      Parser.parse("(cond (true false) (true false) (else false))")
+    }
+  }
+
   test("Let") {
     assertResult(LetExt(List(LetBindExt("x", NumExt(5))), TrueExt())) {
       Parser.parse("(let ((x 5)) true)")
@@ -80,6 +92,48 @@ class ParserTest extends AnyFunSuite {
     assertResult(RecLamExt("sum", NumT(), NumT(), "n", IfExt(BinOpExt("num=", IdExt("n"), NumExt(0)),
       NumExt(0), BinOpExt("+", IdExt("n"), AppExt(IdExt("sum"), List(BinOpExt("-", IdExt("n"), NumExt(1)))))))) {
       Parser.parse("(rec-lam sum : ((Num) -> Num) (n) (if (num= n 0) 0 (+ n (sum (- n 1)))))")
+    }
+  }
+
+  test("List") {
+    assertResult(UnOpExt("is-list", ListExt(BoolT(), List(TrueExt(), FalseExt())))) {
+      Parser.parse("(is-list (list : Bool (true false)))")
+    }
+  }
+
+  test("Nil") {
+    assertResult(NilExt(NumT())) {
+      Parser.parse("(nil : Num)")
+    }
+  }
+
+  test("Empty") {
+    intercept[ParseError] {
+      Parser.parse("()")
+    }
+  }
+
+  test("Empty cond") {
+    intercept[ParseError] {
+      Parser.parse("(cond)")
+    }
+  }
+
+  test("Early else") {
+    intercept[ParseError] {
+      Parser.parse("(cond (else true))")
+    }
+  }
+
+  test("Incomplete if") {
+    intercept[ParseError] {
+      Parser.parse("(if true true)")
+    }
+  }
+
+  test("Branch-less if") {
+    intercept[ParseError] {
+      Parser.parse("(if true)")
     }
   }
 

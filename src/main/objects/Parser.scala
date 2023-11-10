@@ -14,7 +14,7 @@ object Parser {
     case SSym(s) if !ExprExt.reserved.contains(s) => IdExt(s)
     case SNum(a) => NumExt(a)
     case SList(SSym("nil") :: SSym(":") :: ty :: Nil) => NilExt(resolveType(ty))
-    case SList(SSym("list") :: SSym(":") :: ty :: t) => ListExt(resolveType(ty), t.map(parse))
+    case SList(SSym("list") :: SSym(":") :: ty :: SList(t) :: Nil) => ListExt(resolveType(ty), t.map(parse))
     case SList(SSym("tuple") :: t) if t.size > 1 => TupleExt(t.map(parse))
     case SList(SSym("proj") :: SNum(i) :: s :: Nil) => ProjExt(i, parse(s))
     case SList(SSym("lambda") :: SList(p) :: e :: Nil) => FdExt(validIdList(p), parse(e))

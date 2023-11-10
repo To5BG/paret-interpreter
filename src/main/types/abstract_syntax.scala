@@ -46,8 +46,8 @@ case class LetRecBindExt(name: String, ty: Type, value: ExprExt)
 
 object ExprExt {
   val binOps: Set[String] = Set("+", "*", "-", "and", "or", "num=", "num<", "num>", "cons", "setbox", "seq")
-  val unOps: Set[String] = Set("-", "not", "head", "tail", "is-nil", "box", "unbox")
-  val reserved: Set[String] = binOps ++ unOps ++ Set("list", "if", "lambda",
+  val unOps: Set[String] = Set("-", "not", "head", "tail", "is-nil", "is-list", "box", "unbox")
+  val reserved: Set[String] = binOps ++ unOps ++ Set("list", "if", "else", "lambda",
     "let", "true", "false", "rec-lam", "tuple", "proj", "set", "letrec",
     ":", "->", "Num", "Bool", "List", "Tuple", "Ref")
 }

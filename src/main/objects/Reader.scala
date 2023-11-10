@@ -12,17 +12,17 @@ object Reader {
   private var (excess, last) = (0, 0)
 
   def read(input: String): SExpr = input match
-    case str if str.startsWith("(") && str.endsWith(")") =>
-      SList(traverse(str.substring(1, str.length - 1)).map(read))
+    case str if str.startsWith("(") && str.endsWith(")") => SList(traverse(str.substring(1, str.length - 1)).map(read))
     case str => Try(Integer.parseInt(str)) match
       case Success(i) => SNum(i)
       case _ => SSym(str)
     case null => throw ReaderError("")
 
   private def traverse(input: String): List[String] =
+    if input.isEmpty then return List()
     excess = 0
     last = 0
-    var arr = ArrayBuffer[String]()
+    val arr = ArrayBuffer[String]()
     for i <- 0 until input.length do
       if input.charAt(i) == ' ' && excess == 0 then
         arr += input.substring(last, i)
