@@ -27,6 +27,7 @@ object Interpreter {
         case Some(c) => (c.value, st1)
         case None => throw InterpError("Variable is out-of-scope")
       case None => throw InterpError("Variable is undefined")
+    case StringC(s) => (StringV(s), st1)
     case NumC(a) => (NumV(a), st1)
     case TupleC(l) => chainTuple(l, nv, st1, Nil)
     case ProjC(n, t) => interp(t, nv, st1) match
@@ -57,6 +58,12 @@ object Interpreter {
     case LtC(l, r) =>
       val t = checkArithm(l, r, nv, st1)
       (BoolV(t._1 < t._2), t._3)
+    case EqStrC(l, r) =>
+      val t = checkString(l, r, nv, st1)
+      (BoolV(t._1 == t._2), t._3)
+    case ConcStrC(l, r) =>
+      val t = checkString(l, r, nv, st1)
+      (StringV(t._1 ++ t._2), t._3)
     case SetboxC(a, b) => interp(a, nv, st1) match
       case (BoxV(l), st2: Store) => val t = interp(b, nv, st2); (t._1, update(l, t._2, t._1))
       case _ => throw InterpError("Cannot unbox a non-boxed value")
@@ -96,6 +103,18 @@ object Interpreter {
       case _ => throw InterpError("Cannot apply arithmetic operations to non-numeric values")
     (av._1, bv._1, bv._2)
 
+  private def checkString(l: ExprC, r: ExprC, nv: PointerEnvironment, st: Store): (String, String, Store) = {
+    val av = interp(l, nv, st) match {
+      case (StringV(v), st1) => (v, st1);
+      case _ => throw InterpError("Cannot apply string operations to non-character values")
+    }
+    val bv = interp(r, nv, av._2) match {
+      case (StringV(v), st2) => (v, st2);
+      case _ => throw InterpError("Cannot apply string operations to non-character values")
+    }
+    (av._1, bv._1, bv._2)
+  }
+  
   @tailrec
   private def chainStoreArguments(args: List[ExprC], nv: PointerEnvironment,
                                   s: Store, r: List[Int]): (List[Int], Store) = args match

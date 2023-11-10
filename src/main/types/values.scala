@@ -14,6 +14,8 @@ case class PointerClosV(f: FdC, env: List[Pointer]) extends Value
 
 case class BoxV(l: Int) extends Value
 
-case class UninitializedV() extends Value
-
 case class TupleV(l: List[Value]) extends Value
+
+case class StringV(name: String) extends Value
+
+case class UninitializedV() extends Value

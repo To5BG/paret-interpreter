@@ -40,14 +40,29 @@ case class RecLamExt(name: String, paramTy: Type, retTy: Type, param: String, bo
 
 case class LetRecExt(binds: List[LetRecBindExt], body: ExprExt) extends ExprExt
 
+case class StringExt(str: String) extends ExprExt
+
+case class ObjectExt(fields: List[FieldExt], methods: List[MethodExt]) extends ExprExt
+
+case class ObjectDelExt(del: ExprExt, fields: List[FieldExt], methods: List[MethodExt]) extends ExprExt
+
+case class FieldExt(name: String, value: ExprExt)
+
+case class MethodExt(name: String, args: List[String], body: ExprExt)
+
+case class MsgExt(recvr: ExprExt, msg: String, args: List[ExprExt]) extends ExprExt
+
+case class DoSeqExt(expr: List[ExprExt]) extends ExprExt
+
 case class LetBindExt(name: String, value: ExprExt)
 
 case class LetRecBindExt(name: String, ty: Type, value: ExprExt)
 
 object ExprExt {
-  val binOps: Set[String] = Set("+", "*", "-", "and", "or", "num=", "num<", "num>", "cons", "setbox", "seq")
+  val binOps: Set[String] = Set("+", "*", "-", "and", "or", "num=", "num<", "num>", "cons", "setbox",
+    "seq", "str=", "str++")
   val unOps: Set[String] = Set("-", "not", "head", "tail", "is-nil", "is-list", "box", "unbox")
-  val reserved: Set[String] = binOps ++ unOps ++ Set("list", "if", "else", "lambda",
-    "let", "true", "false", "rec-lam", "tuple", "proj", "set", "letrec",
-    ":", "->", "Num", "Bool", "List", "Tuple", "Ref")
+  val reserved: Set[String] = binOps ++ unOps ++ Set("list", "if", "else", "lambda", "let", "true",
+    "false", "rec-lam", "tuple", "proj", "set", "letrec", ":", "->", "Num", "Bool", "List", "Tuple",
+    "Ref", "object", "field", "method", "msg", "self", "do-seq", "msgobj!")
 }

@@ -9,8 +9,6 @@ case class ReaderError(s: String) extends RuntimeException(s)
 
 object Reader {
 
-  private var (excess, last) = (0, 0)
-
   def read(input: String): SExpr = input match
     case str if str.startsWith("(") && str.endsWith(")") => SList(traverse(str.substring(1, str.length - 1)).map(read))
     case str => Try(Integer.parseInt(str)) match
@@ -20,8 +18,7 @@ object Reader {
 
   private def traverse(input: String): List[String] =
     if input.isEmpty then return List()
-    excess = 0
-    last = 0
+    var (excess, last) = (0, 0)
     val arr = ArrayBuffer[String]()
     for i <- 0 until input.length do
       if input.charAt(i) == ' ' && excess == 0 then
